@@ -11,12 +11,13 @@ let connection = mysql.createConnection({
     database: 'emptrack_db'
 });
 
-
+// Function to initialize code
 function init(){
-    startCli()
+    welcomeCli()
 }
-
-function startCli(){
+// Initial Prompts
+// Welcome CLI prompt
+function welcomeCli(){
     inquirer.prompt([
             {
                 type: "list",
@@ -37,11 +38,12 @@ function startCli(){
         });
 };
 
+// Add CLI prompt for Department, Role, Employee
 function add_dre(){
     inquirer.prompt([
         {
             type: "list",
-            message: "Select what you would like to add.",
+            message: "Add an entry for: ",
             choices: ["Department", "Role", "Employee", "Restart"],
             name: "addChoice"
         }
@@ -53,16 +55,17 @@ function add_dre(){
         } else if (answer.addChoice === "Employee"){
             addEntry("Employee");
         } else {
-            startCli();
+            welcomeCli();
         }
     });
 };
 
+// View CLI prompt for Department, Role, Employee
 function view_dre(){
     inquirer.prompt([
         {
             type: "list",
-            message: "Select what you would like to view.",
+            message: "View all entries for: ",
             choices: ["Department", "Role", "Employee", "Restart"],
             name: "viewChoice"
         }
@@ -74,16 +77,17 @@ function view_dre(){
         } else if (answer.viewChoice === "Employee"){
             viewEntry("Employee");
         } else {
-            startCli();
+            welcomeCli();
         }
     });
 };
 
+// Update CLI prompt for Department, Role, Employee
 function update_dre(){
     inquirer.prompt([
         {
             type: "list",
-            message: "Select what you would like to update.",
+            message: "Update an entry for: ",
             choices: ["Department", "Role", "Employee", "Restart"],
             name: "updateChoice"
         }
@@ -95,9 +99,31 @@ function update_dre(){
         } else if (answer.updateChoice === "Employee"){
             updateEntry("Employee");
         } else {
-            startCli();
+            welcomeCli();
         }
     });
 };
+
+// Secondary Prompts
+// Add CLI prompt for Department, Role, Employee
+function addEntry(selection){
+    if (selection === "Department"){
+        // Prompt for Department info
+        inquirer.prompt([
+            {
+                type: "list",
+                message: "Add a: ",
+                choices: ["Department", "Role", "Employee", "Restart"],
+                name: "addChoice"
+            }
+        ]).then(answer => {
+            // Write to database
+        });
+    } else if (selection === "Role"){
+        // Prompt for Role info
+    } else if (selection === "Employee"){
+        // Prompt for Employee info
+    }
+}
 
 init()

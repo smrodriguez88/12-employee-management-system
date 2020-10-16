@@ -4,24 +4,24 @@ CREATE DATABASE emptrack_db;
 USE emptrack_db;
 
 CREATE TABLE department(
-    id INT(12),
-    name VARCHAR(30),
-    PRIMARY KEY (id),
+    id MEDIUMINT NOT NULL AUTO_INCREMENT,
+    name VARCHAR(30) NOT NULL,
+    PRIMARY KEY (id)
 );
 
 CREATE TABLE role(
-    id INT(12),
-    title VARCHAR(30),
-    salary DECIMAL(10, 4),
-    department_id INT(24),
-    PRIMARY KEY (id),
+	id MEDIUMINT NOT NULL AUTO_INCREMENT,
+    title VARCHAR(30) NOT NULL,
+    salary DECIMAL(10, 4) NOT NULL,
+    department_id INT(24) NOT NULL,
+    PRIMARY KEY (id)
 );
 
 CREATE TABLE employee(
-    id INT(12),
-    first_name VARCHAR(30),
-    last_name VARCHAR(30),
-    role_id INT(10),
-    manager_id INT(10),
-    PRIMARY KEY (id),
+    id MEDIUMINT NOT NULL AUTO_INCREMENT,
+    first_name VARCHAR(30) NOT NULL,
+    last_name VARCHAR(30) NOT NULL,
+    role_id INT(10) NOT NULL,
+    manager_id INT(10) NOT NULL,
+    PRIMARY KEY (id)
 );
