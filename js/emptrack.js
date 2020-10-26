@@ -1,7 +1,6 @@
 // Initialize variables
 const mysql = require('mysql');
 const inquirer = require('inquirer');
-const { restoreDefaultPrompts } = require('inquirer');
 
 // Create MySQL DB Connection
 let connection = mysql.createConnection({
@@ -77,13 +76,16 @@ function view_dre(){
         }
     ]).then(answer => {
         if (answer.viewChoice === "Department"){
-            viewAll("Department");
+            var result = viewAll("Department")
+            result.then(results => console.table(results))
             welcomeCli()
         } else if (answer.viewChoice === "Role"){
-            viewAll("Role");
+            var result = viewAll("Role")
+            result.then(results => console.table(results))
             welcomeCli()
         } else if (answer.viewChoice === "Employee"){
-            viewAll("Employee");
+            var result = viewAll("Employee")
+            result.then(results => console.table(results))
             welcomeCli()
         } else {
             welcomeCli();
@@ -126,28 +128,22 @@ function addEntry(selection){
             }
         ]).then(answer => {
             // Write to database
-            let query = connection.query(
-            "INSERT INTO department SET ?",
-            {
-                name: answer.dName
-            }, function (err, res) {
-                if (err) throw err;
-                console.log(`The following department entry has been added: ${answer.dName}`);
+            var result = addOne(selection, {name: answer.dName})
+            result.then(() => {
+                console.log(`The following ${selection} entry has been added: ${answer.dName}`)
                 welcomeCli()
-            }
-        );
+            });
         });
     } else if (selection === "Role"){
-        // Lookup department list to display as choice options
-        connection.query(`SELECT * from department`, function(err, res){
-            if (err) throw err;
-            // Create emtpy array to store options
-            let roleArray = []
-            // For each result of SQL query store in list
-            for(each of res){
-                roleArray.push({'name':each.name, 'id':each.id})
+        // Create emtpy array to store options
+        let deptArray = []
+        // Lookup selected table to display as choice options
+        var result = viewAll("Department")
+        result.then(results => {
+            for(each of results){
+                deptArray.push({'name':each.name, 'id':each.id})
             }  
-            console.log(roleArray)    
+        })   
         // Prompt for Role info  
             inquirer.prompt([
                 {
@@ -163,52 +159,42 @@ function addEntry(selection){
                 {
                     type: "list",
                     message: "Enter Department for role:",
-                    choices: roleArray,
+                    choices: deptArray,
                     name: "rDept",
                 },
             ]).then(answer => {
-                for(each of roleArray){
+                // Gather Department ID of selected Department String
+                for(each of deptArray){
                     if (answer.rDept == each.name){
-                        role_id = each.id
+                        dept_id = each.id
                     }
                 }
                 // Write to database
-                let query = connection.query(
-                "INSERT INTO role SET ?",
-                {
-                    title: answer.rTitle,
-                    salary: answer.rSalary,
-                    department_id: role_id
-                }, function (err, res) {
-                    if (err) throw err;
-                    console.log(`The following role entry has been added: ${answer.rTitle}`);
+                var result = addOne(selection, {title: answer.rTitle, salary: answer.rSalary, department_id: dept_id})
+                result.then(() => {
+                    console.log(`The following ${selection} entry has been added: ${answer.rTitle}`)
                     welcomeCli()
-                }
-            );
+                });
             });
-        });
         } else if (selection === "Employee"){
-            // Prompt for Employee info
-            // Lookup role list to display as choice options
-            connection.query(`SELECT * from role`, function(err, res){
-            if (err) throw err;
             // Create emtpy array to store options
-            let roleArray = []
-            // For each result of SQL query store in list
-            console.log(res)
-            for(each of res){
+            var roleArray = []
+            // Lookup role table to display as choice options
+            var resultRole = viewAll("Role")
+            resultRole.then(results => {
+            for(each of results){
                 roleArray.push({'name':each.title, 'id':each.id})
-            }  
-            console.log(roleArray)
-            connection.query(`SELECT * from employee`, function(err, res){
-                if (err) throw err;
-                // Create emtpy array to store options
-                let empArray = []
-                // For each result of SQL query store in list
-                for(each of res){
+                }
+            })   
+            // Create emtpy array to store options
+            var empArray = []
+            // Lookup selected table to display as choice options
+            var resultEmp = viewAll("Employee")
+            resultEmp.then(results => {
+                for(each of results){
                     empArray.push({'name':`${each.first_name} ${each.last_name}`, 'id':each.id})
                 }  
-                console.log(empArray)    
+            })       
         // Prompt for Role info  
             inquirer.prompt([
                 {
@@ -234,6 +220,7 @@ function addEntry(selection){
                     name: "eManager",
                 },
             ]).then(answer => {
+                // Translate selection Role and Manager options to ID #'s
                 for(each of roleArray){
                     if (answer.eRole == each.name){
                         role_id = each.id
@@ -245,53 +232,79 @@ function addEntry(selection){
                     }
                 }
                 // Write to database
-                let query = connection.query(
-                "INSERT INTO employee SET ?",
-                {
-                    first_name: answer.eFirstName,
-                    last_name: answer.eLastName,
-                    role_id: role_id ,
-                    manager_id: manager_id
-                }, function (err, res) {
-                    if (err) throw err;
-                    console.log(`The following employee entry has been added: ${answer.eFirstName} ${answer.eLastName}`);
+                var result = addOne(selection, {first_name: answer.eFirstName, last_name: answer.eLastName, role_id: role_id, manager_id: manager_id})
+                result.then(() => {
+                    console.log(`The following ${selection} entry has been added: ${answer.eFirstName} ${answer.eLastName}`)
                     welcomeCli()
-                }
-            );
-            });
-        });
-        });
-    }
+                });
+            }); 
+        };
     }
 
-    function updateEntry(selection){
-        if (selection === "Department"){
-            // Prompt for Department info
-            inquirer.prompt([
-                {
-                    type: "list",
-                    message: "Add a: ",
-                    choices: ["Department", "Role", "Employee", "Restart"],
-                    name: "addChoice"
-                }
-            ]).then(answer => {
-                // Write to database
-            });
+async function updateEntry(selection){
+    // Create emtpy array to store options
+    selectionArray = await getOneList(selection)
+    answer = await inquirer.prompt([
+        {
+            type: "list",
+            message: `Which ${selection} would you like to update?`,
+            choices: selectionArray,
+            name: "updateChoice"
+        }
+    ])
+    
+    if(selection === "Department"){
+        // Prompt for Department info
     } else if (selection === "Role"){
         // Prompt for Role info
     } else if (selection === "Employee"){
         // Prompt for Employee info
-    }
-}
+    };
+};
 
 // Core SQL Methods
-function viewAll(table){
-    connection.query(`SELECT * from ${table.toLowerCase()}`, function(err, res){
-        if (err) throw err;
-        console.log("\n")
-        console.table(res)
-        console.log("Press DOWN arrow when done")
+function sendReadSqlQuery(sql){
+    return new Promise((resolve, reject) => {
+        connection.query(sql, (err, res) => {
+            if (err) reject(err);
+            resolve(res);
+        });
     });
+};
+
+function sendCreateSqlQuery(sql, data){
+    return new Promise((resolve, reject) => {
+        connection.query(sql, data, (err, res) => {
+            if (err) reject(err);
+            resolve(res);
+        });
+    });
+};
+
+async function viewAll(table) {
+    let response = await sendReadSqlQuery(`SELECT * from ${table.toLowerCase()}`)
+    return response
+};
+
+async function addOne(table, data) {
+    let response = await sendCreateSqlQuery(`INSERT INTO ${table.toLowerCase()} SET ?`, data)
+    return response
 }
+
+async function getOneList(table){
+    selectionArray = []
+    // Lookup selected table to display as choice options
+    results = await viewAll(table.toLowerCase())
+    for(each of results){
+        if (table === "Department"){
+            selectionArray.push({'name':each.name, 'id':each.id})
+        } else if (table === "Role"){
+            selectionArray.push({'name':each.title, 'id':each.id})
+        } else if (table === "Employee"){
+            selectionArray.push({'name':`${each.first_name} ${each.last_name}`, 'id':each.id})
+        }
+    }
+    return selectionArray
+    }
 
 init()
